@@ -71,5 +71,16 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+
+	<key>NSPhotoLibraryUsageDescription</key>
+    <string>FileBridge needs access to your photo library so you can select photos and videos to upload.</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>FileBridge needs access to your photo library so you can select photos and videos to upload.</string>
+
+    <key>NSPhotoLibraryAddUsageDescription</key>
+    <string>FileBridge needs permission to save downloaded images and videos to your photo library if you choose to do so.</string>
+
+    <key>NSCameraUsageDescription</key>
+    <string>FileBridge needs camera access only if you choose to take a photo for upload.</string>
 </dict>
 </plist>
