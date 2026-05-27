@@ -20,9 +20,10 @@ class DownloadLocation {
       }
     }
 
-    final baseDirectory =
-        await getDownloadsDirectory() ??
-        await getApplicationDocumentsDirectory();
+    final baseDirectory = Platform.isIOS
+        ? await getApplicationDocumentsDirectory()
+        : await getDownloadsDirectory() ??
+              await getApplicationDocumentsDirectory();
     final directory = Directory(joinPath(baseDirectory.path, folderName));
     await directory.create(recursive: true);
     return directory.path;

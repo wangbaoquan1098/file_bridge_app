@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -61,6 +62,7 @@ class UploadController extends StateNotifier<List<UploadTask>> {
 
     final fileName = _textFileName(title);
     final directory = await getTemporaryDirectory();
+    await directory.create(recursive: true);
     final file = File(
       joinPath(
         directory.path,
@@ -103,7 +105,11 @@ class UploadController extends StateNotifier<List<UploadTask>> {
         task.id,
         task.copyWith(status: UploadStatus.success, progress: 1),
       );
-    } on Object catch (error) {
+    } on Object catch (error, stackTrace) {
+      if (kDebugMode) {
+        debugPrint('FileBridge uploadText error: $error');
+        debugPrint('$stackTrace');
+      }
       _replaceTask(
         task.id,
         task.copyWith(

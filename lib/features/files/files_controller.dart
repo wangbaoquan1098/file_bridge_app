@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/network/api_providers.dart';
@@ -95,7 +96,11 @@ class FilesController extends StateNotifier<FilesState> {
         ),
       );
       await refresh();
-    } on Object catch (error) {
+    } on Object catch (error, stackTrace) {
+      if (kDebugMode) {
+        debugPrint('FileBridge download error: $error');
+        debugPrint('$stackTrace');
+      }
       _putDownload(
         item.id,
         state.downloads[item.id]!.copyWith(
