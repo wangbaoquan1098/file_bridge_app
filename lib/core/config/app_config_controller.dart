@@ -23,7 +23,7 @@ class AppConfigController extends StateNotifier<AsyncValue<AppConfig?>> {
     }
 
     final normalized = config.copyWith(
-      serverUrl: config.serverUrl.trim().replaceAll(RegExp(r'/+$'), ''),
+      serverUrl: normalizeServerUrl(config.serverUrl),
       token: config.token.trim(),
       deviceName: config.deviceName.trim(),
     );
@@ -36,6 +36,23 @@ class AppConfigController extends StateNotifier<AsyncValue<AppConfig?>> {
     await _storage.clear();
     state = const AsyncValue.data(null);
   }
+}
+
+String normalizeServerUrl(String value) {
+  var trimmed = value.trim();
+  if (trimmed.isEmpty) {
+    return trimmed;
+  }
+
+  final hasScheme = RegExp(r'^[a-zA-Z][a-zA-Z0-9+.-]*://').hasMatch(trimmed);
+  trimmed = hasScheme ? trimmed : 'http://$trimmed';
+
+  final uri = Uri.tryParse(trimmed);
+  if (uri != null && uri.hasScheme && uri.host.isNotEmpty) {
+    return uri.origin;
+  }
+
+  return trimmed.replaceAll(RegExp(r'/+$'), '');
 }
 
 String defaultDeviceName() {

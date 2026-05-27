@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:mime/mime.dart';
 
 import '../../models/app_config.dart';
@@ -16,7 +17,29 @@ class ApiClient {
           sendTimeout: const Duration(minutes: 30),
           headers: {HttpHeaders.authorizationHeader: 'Bearer ${config.token}'},
         ),
+      ) {
+    if (kDebugMode) {
+      _dio.interceptors.add(
+        InterceptorsWrapper(
+          onRequest: (options, handler) {
+            debugPrint('FileBridge API -> ${options.method} ${options.uri}');
+            handler.next(options);
+          },
+          onResponse: (response, handler) {
+            debugPrint(
+              'FileBridge API <- ${response.statusCode} '
+              '${response.requestOptions.uri}',
+            );
+            handler.next(response);
+          },
+          onError: (error, handler) {
+            _debugNetworkError(error);
+            handler.next(error);
+          },
+        ),
       );
+    }
+  }
 
   final Dio _dio;
 
@@ -154,13 +177,46 @@ ApiException mapApiError(Object error) {
 
     if (error.type == DioExceptionType.connectionTimeout ||
         error.type == DioExceptionType.receiveTimeout ||
-        error.type == DioExceptionType.connectionError ||
-        error.type == DioExceptionType.unknown) {
-      return const ApiException('服务器不可用');
+        error.type == DioExceptionType.connectionError) {
+      return ApiException(_connectionErrorMessage(error));
+    }
+
+    if (error.type == DioExceptionType.unknown) {
+      return ApiException(_unknownNetworkErrorMessage(error));
     }
   }
 
   return ApiException(error.toString());
+}
+
+String _connectionErrorMessage(DioException error) {
+  final message = '${error.error ?? error.message ?? ''}';
+  if (message.contains('No route to host') || message.contains('errno = 65')) {
+    return 'iOS 未允许 FileBridge 访问网络，请在系统设置中开启无线局域网与蜂窝数据权限';
+  }
+  if (message.contains('Operation timed out') ||
+      message.contains('Connection timed out')) {
+    return '连接超时，请确认手机网络可以访问服务器';
+  }
+  if (message.contains('Connection refused')) {
+    return '服务器端口未开放或服务未启动';
+  }
+
+  return '服务器不可用，请检查服务器地址和网络';
+}
+
+String _unknownNetworkErrorMessage(DioException error) {
+  final errorText = '${error.error ?? error.message ?? ''}';
+  if (errorText.contains('Unsupported URL') ||
+      errorText.contains('No host specified') ||
+      errorText.contains('Invalid argument')) {
+    return '服务器地址格式不正确，请填写 http://服务器IP:端口';
+  }
+  if (errorText.contains('App Transport Security')) {
+    return 'iOS 阻止了 HTTP 访问，请重新安装最新版 App 或改用 HTTPS';
+  }
+
+  return '服务器不可用，请检查服务器地址和网络';
 }
 
 String? _serverErrorMessage(Object? data) {
@@ -173,4 +229,16 @@ String? _serverErrorMessage(Object? data) {
   }
 
   return null;
+}
+
+void _debugNetworkError(DioException error) {
+  final responseData = error.response?.data;
+  debugPrint(
+    'FileBridge API error: type=${error.type}, '
+    'uri=${error.requestOptions.uri}, '
+    'status=${error.response?.statusCode}, '
+    'message=${error.message}, '
+    'error=${error.error}, '
+    'response=$responseData',
+  );
 }

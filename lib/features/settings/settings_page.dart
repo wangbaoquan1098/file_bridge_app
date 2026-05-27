@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/config/app_config_controller.dart';
 import '../../core/network/api_client.dart';
+import '../../core/utils/system_settings.dart';
 import '../../models/app_config.dart';
 
 class SettingsPage extends ConsumerStatefulWidget {
@@ -127,7 +128,20 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 Card(
                   child: Padding(
                     padding: const EdgeInsets.all(14),
-                    child: Text(_statusMessage!),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(_statusMessage!),
+                        if (_shouldShowOpenSettings(_statusMessage!)) ...[
+                          const SizedBox(height: 12),
+                          OutlinedButton.icon(
+                            onPressed: _openAppSettings,
+                            icon: const Icon(Icons.settings_outlined),
+                            label: const Text('打开系统设置'),
+                          ),
+                        ],
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -140,10 +154,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
   AppConfig _readConfig() {
     return AppConfig(
-      serverUrl: _serverUrlController.text.trim().replaceAll(
-        RegExp(r'/+$'),
-        '',
-      ),
+      serverUrl: normalizeServerUrl(_serverUrlController.text),
       token: _tokenController.text.trim(),
       deviceName: _deviceNameController.text.trim(),
     );
@@ -205,5 +216,16 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  bool _shouldShowOpenSettings(String message) {
+    return message.contains('系统设置') || message.contains('网络权限');
+  }
+
+  Future<void> _openAppSettings() async {
+    final opened = await SystemSettings.openAppSettings();
+    if (!opened) {
+      _setStatus('请手动打开系统设置，找到 FileBridge 后开启网络权限');
+    }
   }
 }
