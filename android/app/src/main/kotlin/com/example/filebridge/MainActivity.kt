@@ -1,4 +1,4 @@
-package com.example.flutter_app
+package com.example.filebridge
 
 import android.content.ContentValues
 import android.content.Intent
