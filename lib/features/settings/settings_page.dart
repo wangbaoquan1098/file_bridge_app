@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/config/app_config_controller.dart';
+import '../../core/config/app_version_provider.dart';
+import '../../core/config/theme_mode_controller.dart';
 import '../../core/network/api_client.dart';
 import '../../core/utils/system_settings.dart';
 import '../../models/app_config.dart';
@@ -52,6 +54,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     final config = ref.watch(appConfigControllerProvider).valueOrNull;
+    final appVersion = ref.watch(appVersionProvider);
+    final darkModeEnabled = ref.watch(darkModeControllerProvider);
     final title = widget.isInitialSetup ? '设置 FileBridge' : '设置';
 
     return Scaffold(
@@ -90,6 +94,18 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   prefixIcon: Icon(Icons.devices_outlined),
                 ),
                 textInputAction: TextInputAction.done,
+              ),
+              const SizedBox(height: 8),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                secondary: const Icon(Icons.dark_mode_outlined),
+                title: const Text('深色模式'),
+                value: darkModeEnabled,
+                onChanged: (value) {
+                  ref
+                      .read(darkModeControllerProvider.notifier)
+                      .setEnabled(value);
+                },
               ),
               const SizedBox(height: 20),
               Wrap(
@@ -145,6 +161,19 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   ),
                 ),
               ],
+              const SizedBox(height: 28),
+              Center(
+                child: Text(
+                  appVersion.when(
+                    data: (version) => '版本 $version',
+                    loading: () => '版本读取中',
+                    error: (error, stackTrace) => '版本未知',
+                  ),
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
             ],
           ),
         ),

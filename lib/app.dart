@@ -2,18 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/config/app_config_controller.dart';
+import 'core/config/theme_mode_controller.dart';
 import 'features/files/files_page.dart';
 import 'features/settings/settings_page.dart';
 import 'features/upload/upload_page.dart';
 
-class FileBridgeApp extends StatelessWidget {
+class FileBridgeApp extends ConsumerWidget {
   const FileBridgeApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final darkModeEnabled = ref.watch(darkModeControllerProvider);
+
     return MaterialApp(
       title: 'FileBridge',
       debugShowCheckedModeBanner: false,
+      themeMode: darkModeEnabled ? ThemeMode.dark : ThemeMode.light,
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
