@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/utils/formatters.dart';
@@ -7,7 +8,10 @@ import '../../widgets/empty_state.dart';
 import 'upload_controller.dart';
 
 class UploadPage extends ConsumerWidget {
-  const UploadPage({super.key});
+  const UploadPage({super.key, bool? galleryPickerSupportedOverride})
+    : _galleryPickerSupportedOverride = galleryPickerSupportedOverride;
+
+  final bool? _galleryPickerSupportedOverride;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -21,6 +25,8 @@ class UploadPage extends ConsumerWidget {
           task.status == UploadStatus.pending ||
           task.status == UploadStatus.failed,
     );
+    final canPickFromGallery =
+        _galleryPickerSupportedOverride ?? _canPickFromGallery;
 
     return Scaffold(
       appBar: AppBar(title: const Text('发送')),
@@ -50,6 +56,12 @@ class UploadPage extends ConsumerWidget {
                 icon: const Icon(Icons.add),
                 label: const Text('选择文件'),
               ),
+              if (canPickFromGallery)
+                OutlinedButton.icon(
+                  onPressed: uploading ? null : controller.pickGalleryMedia,
+                  icon: const Icon(Icons.photo_library_outlined),
+                  label: const Text('从相册选择'),
+                ),
               OutlinedButton.icon(
                 onPressed: uploading
                     ? null
@@ -94,6 +106,11 @@ class UploadPage extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  bool get _canPickFromGallery {
+    return defaultTargetPlatform == TargetPlatform.iOS ||
+        defaultTargetPlatform == TargetPlatform.android;
   }
 
   Future<void> _showTextUploadSheet(BuildContext context) async {

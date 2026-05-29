@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../../core/config/app_config_controller.dart';
@@ -41,6 +42,31 @@ class UploadController extends StateNotifier<List<UploadTask>> {
           ),
         )
         .toList();
+
+    state = [...state, ...tasks];
+  }
+
+  Future<void> pickGalleryMedia() async {
+    final mediaFiles = await ImagePicker().pickMultipleMedia(
+      requestFullMetadata: false,
+    );
+
+    if (mediaFiles.isEmpty) {
+      return;
+    }
+
+    final timestamp = DateTime.now().microsecondsSinceEpoch;
+    final tasks = <UploadTask>[];
+    for (final mediaFile in mediaFiles) {
+      tasks.add(
+        UploadTask(
+          id: '${mediaFile.path}-$timestamp',
+          localPath: mediaFile.path,
+          fileName: safeFileName(mediaFile.name),
+          size: await mediaFile.length(),
+        ),
+      );
+    }
 
     state = [...state, ...tasks];
   }

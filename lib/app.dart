@@ -69,8 +69,15 @@ class HomeShell extends StatefulWidget {
 
 class _HomeShellState extends State<HomeShell> {
   int _selectedIndex = 0;
+  late final PageController _pageController = PageController();
 
   static const _pages = [UploadPage(), FilesPage(), SettingsPage()];
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -82,9 +89,7 @@ class _HomeShellState extends State<HomeShell> {
           children: [
             NavigationRail(
               selectedIndex: _selectedIndex,
-              onDestinationSelected: (index) {
-                setState(() => _selectedIndex = index);
-              },
+              onDestinationSelected: _selectPage,
               labelType: NavigationRailLabelType.all,
               destinations: const [
                 NavigationRailDestination(
@@ -105,19 +110,17 @@ class _HomeShellState extends State<HomeShell> {
               ],
             ),
             const VerticalDivider(width: 1),
-            Expanded(child: _pages[_selectedIndex]),
+            Expanded(child: _buildPageView()),
           ],
         ),
       );
     }
 
     return Scaffold(
-      body: _pages[_selectedIndex],
+      body: _buildPageView(),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
-        onDestinationSelected: (index) {
-          setState(() => _selectedIndex = index);
-        },
+        onDestinationSelected: _selectPage,
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.upload_file_outlined),
@@ -137,5 +140,30 @@ class _HomeShellState extends State<HomeShell> {
         ],
       ),
     );
+  }
+
+  Widget _buildPageView() {
+    return PageView(
+      controller: _pageController,
+      onPageChanged: (index) {
+        setState(() => _selectedIndex = index);
+      },
+      children: _pages,
+    );
+  }
+
+  void _selectPage(int index) {
+    if (_selectedIndex == index) {
+      return;
+    }
+
+    setState(() => _selectedIndex = index);
+    if (_pageController.hasClients) {
+      _pageController.animateToPage(
+        index,
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOutCubic,
+      );
+    }
   }
 }

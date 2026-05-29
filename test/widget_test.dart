@@ -1,6 +1,8 @@
 import 'package:file_bridge/app.dart';
 import 'package:file_bridge/core/config/app_config_controller.dart';
 import 'package:file_bridge/core/storage/config_storage.dart';
+import 'package:file_bridge/features/files/files_controller.dart';
+import 'package:file_bridge/features/upload/upload_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -74,4 +76,73 @@ void main() {
     expect(app.themeMode, ThemeMode.dark);
     expect(find.text('深色模式'), findsOneWidget);
   });
+
+  testWidgets('swipes between bottom navigation pages', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    PackageInfo.setMockInitialValues(
+      appName: 'FileBridge',
+      packageName: 'com.zyjzbd.filebridge',
+      version: '1.2.3',
+      buildNumber: '9',
+      buildSignature: '',
+      installerStore: null,
+    );
+    SharedPreferences.setMockInitialValues({
+      'serverUrl': 'http://localhost:8787',
+      'token': 'test-token',
+      'deviceName': 'Test Device',
+    });
+    final preferences = await SharedPreferences.getInstance();
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(preferences),
+          filesControllerProvider.overrideWith(_TestFilesController.new),
+        ],
+        child: const MaterialApp(home: HomeShell()),
+      ),
+    );
+
+    expect(
+      tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
+      0,
+    );
+
+    await tester.drag(find.byType(PageView), const Offset(-250, 0));
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
+      1,
+    );
+  });
+
+  testWidgets('shows gallery picker action when gallery is supported', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(
+        child: MaterialApp(
+          home: UploadPage(galleryPickerSupportedOverride: true),
+        ),
+      ),
+    );
+
+    expect(find.text('从相册选择'), findsOneWidget);
+  });
+}
+
+class _TestFilesController extends FilesController {
+  _TestFilesController(super.ref) {
+    state = const FilesState(files: AsyncValue.data([]));
+  }
+
+  @override
+  Future<void> refresh() async {
+    state = const FilesState(files: AsyncValue.data([]));
+  }
 }
